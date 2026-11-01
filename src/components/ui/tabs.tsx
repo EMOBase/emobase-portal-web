@@ -2,10 +2,7 @@ import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 
 import { cn } from "@/utils/classname";
 
-function Tabs({
-  className,
-  ...props
-}: TabsPrimitive.Root.Props) {
+function Tabs({ className, ...props }: TabsPrimitive.Root.Props) {
   return (
     <TabsPrimitive.Root
       className={cn("flex flex-col gap-8", className)}
@@ -14,10 +11,7 @@ function Tabs({
   );
 }
 
-function TabsList({
-  className,
-  ...props
-}: TabsPrimitive.List.Props) {
+function TabsList({ className, ...props }: TabsPrimitive.List.Props) {
   return (
     <div className="border-b border-slate-200">
       <TabsPrimitive.List
@@ -48,7 +42,7 @@ function TabsTrigger({
       {badge !== undefined && (
         <span
           className={
-            "py-0.5 px-2.5 rounded-full text-xs font-semibold bg-slate-100 text-slate-600 group-data-[active]/trigger:bg-blue-100 group-data-[active]/trigger:text-blue-700"
+            "py-0.5 px-2.5 rounded-full text-xs font-semibold bg-slate-200 text-slate-600 group-data-[active]/trigger:bg-blue-200/80 group-data-[active]/trigger:text-blue-700"
           }
         >
           {badge}
@@ -58,10 +52,7 @@ function TabsTrigger({
   );
 }
 
-function TabsContent({
-  className,
-  ...props
-}: TabsPrimitive.Panel.Props) {
+function TabsContent({ className, ...props }: TabsPrimitive.Panel.Props) {
   return (
     <TabsPrimitive.Panel
       className={cn("flex-1 outline-none", className)}

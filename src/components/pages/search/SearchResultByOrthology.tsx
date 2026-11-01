@@ -132,7 +132,7 @@ const SearchResultByOrthology: React.FC<SearchResultByOrthologyProps> = ({
                   <div className="text-sm font-medium text-slate-700">
                     {getSpeciesDisplayName(species)}
                   </div>
-                  <div className="flex flex-wrap gap-2 items-center">
+                  <div className="flex flex-wrap gap-3 items-center">
                     {genes.length > 0 ? (
                       genes.map(({ gene, synonyms }) => (
                         <div
