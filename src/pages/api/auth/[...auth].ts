@@ -1,7 +1,7 @@
 import { Auth } from "@auth/core";
 import { decode } from "@auth/core/jwt";
 import authConfig from "../../../../auth.config.mjs";
-import { getEnv } from "@/utils/env";
+import { getUrlEnv } from "@/utils/env";
 
 const SESSION_COOKIES = ["__Secure-authjs.session-token", "authjs.session-token"];
 const SIGNOUT_PATH = "/api/auth/signout";
@@ -26,7 +26,7 @@ const handler = async ({ request }: { request: Request }) => {
 
     if (idToken) {
       const logoutUrl = new URL(
-        `${getEnv("KEYCLOAK_ISSUER")}/protocol/openid-connect/logout`,
+        `${getUrlEnv("KEYCLOAK_ISSUER")}/protocol/openid-connect/logout`,
       );
       logoutUrl.searchParams.set("post_logout_redirect_uri", url.origin);
       logoutUrl.searchParams.set("id_token_hint", idToken);

@@ -1,6 +1,6 @@
 import Keycloak from "@auth/core/providers/keycloak";
 import { defineConfig } from "@zitadel/astro-auth";
-import { getEnv } from "./src/utils/env";
+import { getEnv, getUrlEnv } from "./src/utils/env";
 
 import { resolveBaseUrl } from "./src/utils/url";
 
@@ -15,7 +15,7 @@ const getKeyCloakPath = (issuerUrl) => {
  * to ensure faster and more reliable server-to-server communication.
  */
 const resolveKeycloakUrls = () => {
-  const issuerUrl = getEnv("KEYCLOAK_ISSUER");
+  const issuerUrl = getUrlEnv("KEYCLOAK_ISSUER");
 
   return {
     server: resolveBaseUrl("keycloak") + getKeyCloakPath(issuerUrl),
@@ -34,7 +34,7 @@ export default defineConfig({
     Keycloak({
       clientId: getEnv("KEYCLOAK_CLIENT_ID"),
       clientSecret: getEnv("KEYCLOAK_CLIENT_SECRET"),
-      issuer: getEnv("KEYCLOAK_VALID_ISSUER") || getEnv("KEYCLOAK_ISSUER"),
+      issuer: getUrlEnv("KEYCLOAK_VALID_ISSUER") || getUrlEnv("KEYCLOAK_ISSUER"),
 
       // Explicitly define endpoints to handle Docker networking
       authorization: {

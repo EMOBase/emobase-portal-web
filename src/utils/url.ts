@@ -1,22 +1,19 @@
-import { getEnv } from "./env";
+import { getEnv, getUrlEnv } from "./env";
 import { type ApiService } from "./constants/api";
 
-export const directusUrl = getEnv("PUBLIC_DIRECTUS_URL");
-export const keycloakIssuerUrl = getEnv("KEYCLOAK_ISSUER");
-export const apiBaseUrl = getEnv("PUBLIC_APIS_BASE_URL");
-export const jbrowseBaseUrl = getEnv("PUBLIC_UI_PAGE_GENOMEBROWSER");
-export const publicServerUrl = getEnv("PUBLIC_SERVER");
-export const downloadBaseUrl = getEnv("PUBLIC_DOWNLOAD_URL");
+export const directusUrl = getUrlEnv("PUBLIC_DIRECTUS_URL");
+export const keycloakIssuerUrl = getUrlEnv("KEYCLOAK_ISSUER");
+export const apiBaseUrl = getUrlEnv("PUBLIC_APIS_BASE_URL");
+export const jbrowseBaseUrl = getUrlEnv("PUBLIC_UI_PAGE_GENOMEBROWSER");
+export const downloadBaseUrl = getUrlEnv("PUBLIC_DOWNLOAD_URL");
 
 const ASSEMBLY_IMAGE_PATH_PREFIX = "public/uploads/";
 
 export const downloadUrl = (path: string): string => {
-  const origin = publicServerUrl.replace(/\/+$/, "");
-  const download = downloadBaseUrl.startsWith("/")
+  const base = downloadBaseUrl.endsWith("/")
     ? downloadBaseUrl
-    : `/${downloadBaseUrl}`;
-  const base = download.endsWith("/") ? download : `${download}/`;
-  return `${origin}${base}${path.replace(/^\/+/, "")}`;
+    : `${downloadBaseUrl}/`;
+  return `${base}${path.replace(/^\/+/, "")}`;
 };
 
 export const assemblyImageUrl = (
