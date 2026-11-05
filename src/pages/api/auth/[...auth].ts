@@ -1,7 +1,7 @@
 import { Auth } from "@auth/core";
 import { decode } from "@auth/core/jwt";
 import authConfig from "../../../../auth.config.mjs";
-import { getUrlEnv } from "@/utils/env";
+import { getEnv, getUrlEnv } from "@/utils/env";
 
 const SESSION_COOKIES = ["__Secure-authjs.session-token", "authjs.session-token"];
 const SIGNOUT_PATH = "/api/auth/signout";
@@ -9,18 +9,38 @@ const SIGNOUT_PATH = "/api/auth/signout";
 const isLocalhost = (hostname: string) =>
   ["localhost", "127.0.0.1", "::1"].includes(hostname);
 
+/**
+ * The node adapter always builds an http:// request URL, even when the public
+ * endpoint is behind a TLS proxy. Prefer the proxy header, then fall back to
+ * the configured PUBLIC_SERVER so a direct request to the container still
+ * uses the public scheme.
+ */
+const requestUsesHttps = (request: Request): boolean => {
+  const forwardedProto = request.headers
+    .get("x-forwarded-proto")
+    ?.split(",")[0]
+    ?.trim()
+    .toLowerCase();
+
+  if (forwardedProto === "https") return true;
+  if (forwardedProto === "http") return false;
+
+  const publicServer = getEnv("PUBLIC_SERVER");
+  return /^https:\/\//i.test(publicServer);
+};
+
 const handler = async ({ request }: { request: Request }) => {
   const url = new URL(request.url);
 
-  // Astro's node adapter builds http:// request URLs even when the public
-  // endpoint is behind a TLS proxy. Rewrite to https on deployed hosts only;
-  // local dev servers are plain http and must keep their original scheme.
-  const behindTlsProxy = !isLocalhost(url.hostname);
-  if (behindTlsProxy) {
+  if (requestUsesHttps(request)) {
     url.protocol = "https:";
   }
 
-  if (behindTlsProxy && url.pathname === SIGNOUT_PATH && request.method === "POST") {
+  // Use the RP-initiated logout for deployed hosts (including plain-HTTP LAN
+  // deployments), but keep local dev servers on Auth.js' default sign-out.
+  const isDeployedHost = !isLocalhost(url.hostname);
+
+  if (isDeployedHost && url.pathname === SIGNOUT_PATH && request.method === "POST") {
     const idToken = await getIdToken(request);
     const response = await Auth(new Request(url, request), authConfig);
 
