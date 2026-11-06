@@ -84,18 +84,17 @@ export default function VersionDetail({ versionName }: VersionDetailProps) {
   ) {
     try {
       await updateAssemblyVersion(versionName, assembly.id, {
-        name: values.name,
         infoUrl: values.infoUrl,
       });
       setRefreshKey((prev) => prev + 1);
       toastManager.add({
         type: "success",
-        title: `Updated assembly ${values.name}`,
+        title: `Updated assembly ${assembly.name}`,
       });
     } catch (err) {
       toastManager.add({
         type: "error",
-        title: `Failed to update assembly ${values.name}`,
+        title: `Failed to update assembly ${assembly.name}`,
         description: err instanceof Error ? err.message : undefined,
       });
       throw err;

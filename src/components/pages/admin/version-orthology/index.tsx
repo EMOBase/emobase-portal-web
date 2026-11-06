@@ -79,6 +79,13 @@ export default function VersionOrthology({
 
   const versionStatus = data?.data.status;
 
+  // Keep the empty fallback stable so the hook's job list does not change
+  // identity on every render before the first detail response arrives.
+  const bundleFiles = React.useMemo(
+    () => data?.data.orthologyBundle ?? [],
+    [data],
+  );
+
   // The bundle archives and their extraction jobs live in the floating
   // processing panel, not in the page: the panel owns the whole lifecycle of
   // an archive, from the first byte to its extraction.
@@ -90,9 +97,8 @@ export default function VersionOrthology({
     updateBundle: updateBundleUpload,
     dismissUpload: dismissBundleUpload,
   } = useBundleUploads({
-    versionName,
+    bundleFiles,
     jobType: "ORTHOLOGY.BUNDLE",
-    refreshToken,
   });
 
   const orthologyFiles = React.useMemo<FileStatus[]>(() => {

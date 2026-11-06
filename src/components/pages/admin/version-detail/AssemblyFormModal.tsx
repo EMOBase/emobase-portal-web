@@ -20,6 +20,7 @@ type AssemblyFormModalProps = {
   submitLabel: string;
   defaultValues?: Partial<AssemblyFormValues>;
   onSubmit: (values: AssemblyFormValues) => Promise<unknown> | void;
+  lockName?: boolean;
   lockSpecies?: boolean;
 };
 
@@ -30,6 +31,7 @@ export default function AssemblyFormModal({
   submitLabel,
   defaultValues,
   onSubmit,
+  lockName = false,
   lockSpecies = false,
 }: AssemblyFormModalProps) {
   const [open, setOpen] = React.useState(false);
@@ -97,7 +99,7 @@ export default function AssemblyFormModal({
               value={form.values.name}
               onChange={(e) => form.setField("name", e.target.value)}
               placeholder="e.g. Tcas 5.2"
-              disabled={form.submitting}
+              disabled={form.submitting || lockName}
               aria-invalid={Boolean(form.errors.name)}
             />
           </Field>

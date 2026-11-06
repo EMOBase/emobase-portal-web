@@ -1,10 +1,9 @@
-import type { JobItem } from "@/utils/services/genomics";
-import type { BundleUploadItem } from "./types";
+import type { BundleJobStatus, BundleUploadItem } from "./types";
 
 /**
  * The state of an extraction job.
  */
-export function StatusPill({ status }: { status: JobItem["status"] }) {
+export function StatusPill({ status }: { status: BundleJobStatus }) {
   if (status === "FAILED") {
     return (
       <span className="shrink-0 rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-red-600">

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 
 import { BundleProcessingPanel } from "./BundleProcessingPanel";
 import type { BundleUploadItem } from "./types";
-import type { JobItem } from "@/utils/services/genomics";
+import type { BundleJob } from "./types";
 
 const meta = {
   title: "Admin/_shared/BundleProcessingPanel",
@@ -20,9 +20,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const makeJob = (overrides: Partial<JobItem> = {}): JobItem => ({
+const makeJob = (overrides: Partial<BundleJob> = {}): BundleJob => ({
   id: 1,
-  versionId: 12,
   type: "ORTHOLOGY.BUNDLE",
   description: "Extract orthology bundle",
   status: "PENDING",
@@ -223,10 +222,10 @@ function WitnessedFailureDemo({
   initialJobs,
   failures,
 }: {
-  initialJobs: JobItem[];
+  initialJobs: BundleJob[];
   failures: Record<number, string>;
 }) {
-  const [jobs, setJobs] = React.useState<JobItem[]>(initialJobs);
+  const [jobs, setJobs] = React.useState<BundleJob[]>(initialJobs);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -272,7 +271,7 @@ export const Failed: Story = {
 };
 
 function CompletionDemo() {
-  const [jobs, setJobs] = React.useState<JobItem[]>([
+  const [jobs, setJobs] = React.useState<BundleJob[]>([
     makeJob({
       id: 61,
       status: "RUNNING",

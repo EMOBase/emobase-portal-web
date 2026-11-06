@@ -1,12 +1,11 @@
 import * as React from "react";
 
 import { cn } from "@/utils/classname";
-import type { JobItem } from "@/utils/services/genomics";
 
 import { JobRow } from "./JobRow";
 import { PanelHeader, panelSubtitle } from "./PanelHeader";
 import { panelThemeClasses, resolvePanelTheme } from "./theme";
-import type { BundleUploadItem, PanelJobRow } from "./types";
+import type { BundleJob, BundleUploadItem, PanelJobRow } from "./types";
 import { UploadRow } from "./UploadRow";
 import { useErrorLinger } from "./useErrorLinger";
 import { bundleName, jobErrorKey, uploadErrorKey } from "./utils";
@@ -19,7 +18,7 @@ export function BundleProcessingPanel({
   onDismissUpload,
   preview = false,
 }: {
-  jobs: JobItem[];
+  jobs: BundleJob[];
   uploads?: BundleUploadItem[];
   onDismissUpload?: (uploadId: string) => void;
   /** Static showcase mode (Storybook): every row shape is rendered at once -
@@ -58,7 +57,7 @@ export function BundleProcessingPanel({
   const [completing, setCompleting] = React.useState<
     Array<{ id: number; name: string; position: number }>
   >([]);
-  const [prevJobs, setPrevJobs] = React.useState<JobItem[] | null>(null);
+  const [prevJobs, setPrevJobs] = React.useState<BundleJob[] | null>(null);
 
   if (jobs !== prevJobs) {
     setPrevJobs(jobs);
@@ -216,7 +215,7 @@ export function BundleProcessingPanel({
           name: bundleName(job),
           completed: false as const,
           status: job.status,
-          error: job.error,
+          error: job.error ?? undefined,
           description: job.description,
         },
   );

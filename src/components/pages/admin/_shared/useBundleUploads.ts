@@ -1,8 +1,8 @@
 import * as React from "react";
 
-import useAsyncData from "@/hooks/useAsyncData";
-import useService from "@/hooks/useService";
-import genomicsService, { type JobItem } from "@/utils/services/genomics";
+import type { FileDetail } from "@/utils/services/genomics";
+
+import type { BundleJob } from "./BundleProcessingPanel/types";
 
 export type BundleJobType = "ORTHOLOGY.BUNDLE" | "JBROWSE.TRACK.BUNDLE";
 
@@ -21,39 +21,45 @@ export type BundleUploadState = {
  * listed (UPLOADED), or the upload itself failed (FAILED). The floating
  * BundleProcessingPanel renders this state, so a bundle archive never shows
  * up as page content.
+ *
+ * The bundle files (and their jobs) come from the version/assembly detail
+ * response the page already fetches, so this hook makes no request of its own.
  */
 export function useBundleUploads({
-  versionName,
+  bundleFiles,
   jobType,
-  refreshToken,
 }: {
-  versionName: string;
+  bundleFiles: FileDetail[];
   jobType: BundleJobType;
-  refreshToken: number;
 }) {
-  const { fetchJobs } = useService(genomicsService);
-
-  const { data: jobsData } = useAsyncData(
-    () => fetchJobs(versionName),
-    [versionName, fetchJobs, refreshToken],
+  const jobs = React.useMemo<BundleJob[]>(
+    () =>
+      bundleFiles.flatMap((file) =>
+        (file.jobs ?? [])
+          .filter((job) => job.type === jobType)
+          .map((job) => ({
+            id: job.id,
+            type: job.type,
+            description: job.description,
+            status: job.status,
+            payload: job.payload,
+            error: job.error,
+          })),
+      ),
+    [bundleFiles, jobType],
   );
 
   const [bundleUploads, setBundleUploads] = React.useState<BundleUploadState[]>(
     [],
   );
 
-  // The extraction jobs of this kind. DONE jobs drop out here so the panel
-  // can watch a job leave the list (its completion animation); everything
-  // else - including all historical FAILED rows, which live in the database
-  // forever - is passed through for the panel to decide. The panel only ever
-  // shows a failure it watched happen (the job was active in this page
-  // instance first), so stale failures never surface, on any device, with no
-  // client-side storage involved.
-  const jobs = React.useMemo<JobItem[]>(
-    () => (jobsData?.data ?? []).filter((job) => job.type === jobType),
-    [jobsData, jobType],
-  );
-
+  // Active jobs are the panel's server-side rows. DONE jobs drop out here so
+  // the panel can watch a job leave the list (its completion animation);
+  // everything else - including all historical FAILED rows, which live in the
+  // database forever - is passed through for the panel to decide. The panel
+  // only ever shows a failure it watched happen (the job was active in this
+  // page instance first), so stale failures never surface, on any device, with
+  // no client-side storage involved.
   const activeJobs = React.useMemo(
     () => jobs.filter((job) => job.status !== "DONE"),
     [jobs],
@@ -84,14 +90,18 @@ export function useBundleUploads({
 
   // The system creates the extraction job before tus reports the upload as
   // successful, so its fileId lets us hand the row over from "uploading" to
-  // "extracting" without a gap (and without name guessing).
+  // "extracting" without a gap (and without name guessing). The detail
+  // response lists the file row before its job exists, so only a bundle file
+  // that already has its job counts as the hand-off point.
   const jobFileIds = React.useMemo(() => {
     const ids = new Set<string>();
-    for (const job of jobs) {
-      if (job.fileId) ids.add(job.fileId);
+    for (const file of bundleFiles) {
+      if ((file.jobs ?? []).some((job) => job.type === jobType)) {
+        ids.add(file.id);
+      }
     }
     return ids;
-  }, [jobs]);
+  }, [bundleFiles, jobType]);
 
   // The uploads the panel still shows: an upload that has landed waits for
   // its job to be listed, and leaves the panel as soon as it is.

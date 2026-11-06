@@ -115,6 +115,7 @@ export default function AssemblyCard({
                     speciesName: assembly.speciesName,
                     infoUrl: assembly.infoUrl ?? "",
                   }}
+                  lockName
                   lockSpecies
                   onSubmit={onSubmit ?? (() => {})}
                 />

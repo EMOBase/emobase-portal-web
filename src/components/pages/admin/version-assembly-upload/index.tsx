@@ -14,29 +14,20 @@ import genomicsService, {
 import useAsyncData from "@/hooks/useAsyncData";
 import useService from "@/hooks/useService";
 import { formatBytes } from "@/utils/format";
-import { isBeetleSpecies } from "@/utils/species";
 
 type MainFileConfig = {
   category: string;
   icon: string;
 };
 
-const getMainFileConfigs = (
-  speciesCode: string,
-): Record<string, MainFileConfig> => {
-  const configs: Record<string, MainFileConfig> = {
-    "genomic.fna": { category: "Genome Sequence", icon: "file-text" },
-    "genomic.gff": { category: "Genome Annotation", icon: "hash" },
-    "rna.fna": { category: "RNA Sequences", icon: "microscope" },
-    "cds.fna": { category: "Coding Sequences", icon: "braces" },
-    "protein.faa": { category: "Protein Sequences", icon: "dna" },
-  };
-
-  if (isBeetleSpecies(speciesCode)) {
-    configs["dsrna.csv"] = { category: "dsRNA Silencing", icon: "syringe" };
-  }
-
-  return configs;
+// dsRNA data is accepted for every species now (it used to be Tcas-only).
+const MAIN_FILE_CONFIGS: Record<string, MainFileConfig> = {
+  "genomic.fna": { category: "Genome Sequence", icon: "file-text" },
+  "genomic.gff": { category: "Genome Annotation", icon: "hash" },
+  "rna.fna": { category: "RNA Sequences", icon: "microscope" },
+  "cds.fna": { category: "Coding Sequences", icon: "braces" },
+  "protein.faa": { category: "Protein Sequences", icon: "dna" },
+  "dsrna.csv": { category: "dsRNA Silencing", icon: "syringe" },
 };
 
 function computeFileStatus(fileDetail?: FileDetail | null): {
@@ -104,6 +95,13 @@ export default function VersionAssemblyUpload({
     [versionName, assemblyId, fetchAssemblyVersionDetail, refreshToken],
   );
 
+  // Keep the empty fallback stable so the hook's job list does not change
+  // identity on every render before the first detail response arrives.
+  const bundleFiles = React.useMemo(
+    () => data?.data?.files?.["jbrowse.track.bundle"] ?? [],
+    [data],
+  );
+
   // The bundle archives and their extraction jobs live in the floating
   // processing panel, not in the page: the panel owns the whole lifecycle of
   // an archive, from the first byte to its extraction.
@@ -115,9 +113,8 @@ export default function VersionAssemblyUpload({
     updateBundle: updateBundleUpload,
     dismissUpload: dismissBundleUpload,
   } = useBundleUploads({
-    versionName,
+    bundleFiles,
     jobType: "JBROWSE.TRACK.BUNDLE",
-    refreshToken,
   });
 
   const assemblyName = data?.data?.name ?? assemblyId;
@@ -125,29 +122,26 @@ export default function VersionAssemblyUpload({
   const versionFiles: VersionDetailFiles = data?.data?.files ?? {};
 
   const mainFiles = React.useMemo<FileStatus[]>(() => {
-    return Object.entries(getMainFileConfigs(speciesCode)).map(
-      ([fileName, config]) => {
-        const fileDetail = versionFiles[
-          fileName as keyof VersionDetailFiles
-        ] as FileDetail | null | undefined;
-        const { status, progress, progressTitle, error } =
-          computeFileStatus(fileDetail);
+    return Object.entries(MAIN_FILE_CONFIGS).map(([fileName, config]) => {
+      const fileDetail = versionFiles[fileName as keyof VersionDetailFiles] as
+        FileDetail | null | undefined;
+      const { status, progress, progressTitle, error } =
+        computeFileStatus(fileDetail);
 
-        return {
-          id: fileDetail?.id,
-          name: fileName,
-          category: config.category,
-          icon: config.icon,
-          status,
-          progress,
-          progressTitle,
-          error,
-          size: fileDetail ? formatBytes(fileDetail.fileSize) : "",
-          theme: status === "READY" ? "blue" : "orange",
-        };
-      },
-    );
-  }, [versionFiles, speciesCode]);
+      return {
+        id: fileDetail?.id,
+        name: fileName,
+        category: config.category,
+        icon: config.icon,
+        status,
+        progress,
+        progressTitle,
+        error,
+        size: fileDetail ? formatBytes(fileDetail.fileSize) : "",
+        theme: status === "READY" ? "blue" : "orange",
+      };
+    });
+  }, [versionFiles]);
 
   const jbrowseTrackFiles = React.useMemo<FileStatus[]>(() => {
     const files: FileDetail[] = versionFiles["jbrowse.track"] || [];

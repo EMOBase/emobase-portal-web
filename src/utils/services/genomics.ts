@@ -32,7 +32,6 @@ export type PublicVersionItem = {
 
 type FetchPublicVersionsResponse = {
   data: PublicVersionItem[];
-
   requestId: string;
 };
 
@@ -71,7 +70,6 @@ type CreateAssemblyVersionInput = {
 };
 
 type UpdateAssemblyVersionInput = {
-  name?: string;
   infoUrl?: string;
 };
 
@@ -80,34 +78,9 @@ type CreateAssemblyVersionResponse = {
   requestId: string;
 };
 
-export type JobItem = {
-  id: number;
-  versionId: number;
-  fileId?: string | null;
-  type:
-    | "GENOMIC.FNA"
-    | "GENOMIC.GFF"
-    | "RNA.FNA"
-    | "CDS.FNA"
-    | "PROTEIN.FAA"
-    | "ORTHOLOGY.TSV"
-    | "ORTHOLOGY.BUNDLE"
-    | "JBROWSE.TRACK.BUNDLE"
-    | "SYNONYM";
-  description: string;
-  status: "PENDING" | "RUNNING" | "DONE" | "FAILED";
-  payload?: any;
-  error?: string;
-};
-
-type FetchJobResponse = {
-  data: JobItem[];
-  requestId: string;
-};
-
 export type FileJobSummary = {
   id: number;
-  type: JobItem["type"] | string;
+  type: string;
   description: string;
   status: "PENDING" | "RUNNING" | "DONE" | "FAILED";
   payload: any;
@@ -133,6 +106,7 @@ export type VersionDetailFiles = {
   "protein.faa"?: FileDetail | null;
   "dsrna.csv"?: FileDetail | null;
   "jbrowse.track"?: FileDetail[];
+  "jbrowse.track.bundle"?: FileDetail[];
   "orthology.tsv"?: FileDetail[];
   "species.synonym"?: FileDetail[];
 };
@@ -155,6 +129,7 @@ type FetchVersionDetailResponse = {
     updatedBy: string;
     totalFileSize: number;
     orthologyTSV: FileDetail[];
+    orthologyBundle: FileDetail[];
     assemblies: AssemblyVersionDetail[];
   };
   requestId: string;
@@ -163,25 +138,6 @@ type FetchVersionDetailResponse = {
 type FetchAssemblyVersionDetailResponse = {
   data: AssemblyVersionDetail;
   requestId: string;
-};
-
-export type GeneSequence = {
-  id: string;
-  seq: string;
-};
-
-export type GeneDetail = {
-  id: string;
-  symbol?: string;
-  fullname?: string;
-  annotationId?: string;
-  seqname?: string;
-  start?: number;
-  end?: number;
-  strand?: string;
-  mRNAs?: GeneSequence[];
-  CDS?: GeneSequence[];
-  proteins?: GeneSequence[];
 };
 
 export type GeneSearchResult = {
@@ -210,25 +166,10 @@ export type SearchOptions = {
   species?: string;
 };
 
-export type OrthologItem = {
-  gene: string;
-  source: string;
-};
-
-export type GeneOrthology = {
-  gene: string;
-  orthologs: OrthologItem[];
-};
-
-export type SilencingSeq = {
-  id: string;
-  geneIds: string[];
-  seq: string;
-  leftPrimer: string;
-  rightPrimer: string;
-};
-
 const genomicsService = (fetch: typeof apiFetch = apiFetch) => {
+  // /public/versions is deprecated in favour of GET /versions, but it is the
+  // only endpoint that filters by status server-side (GET /versions ignores
+  // ?status), and the selector must not show DRAFT/PROCESSING versions.
   const fetchPublicVersions = async () => {
     const res = await fetch<FetchPublicVersionsResponse>(
       "genomicsservice",
@@ -319,14 +260,6 @@ const genomicsService = (fetch: typeof apiFetch = apiFetch) => {
         method: "DELETE",
       },
     );
-  };
-
-  const fetchJobs = async (version: string) => {
-    return await fetch<FetchJobResponse>("genomicsservice", "/jobs", {
-      query: {
-        version,
-      },
-    });
   };
 
   const fetchManifestTemplate = async (fileType: string) => {
@@ -454,40 +387,6 @@ const genomicsService = (fetch: typeof apiFetch = apiFetch) => {
     return res.data;
   };
 
-  const fetchGenes = async (species: string, ids: string[]) => {
-    if (ids.length === 0) return [];
-    const version = await resolveVersion();
-    let url = `/genes/${species}?ids=${ids.join(",")}`;
-    if (version) url += `&version=${encodeURIComponent(version)}`;
-    const res = await fetch<{
-      data: GeneDetail[];
-      requestId: string;
-    }>("genomicsservice", url);
-    return res.data;
-  };
-
-  const fetchIBs = async (gene: string) => {
-    const version = await resolveVersion();
-    let url = `/silencingseqs?geneIds=${gene}`;
-    if (version) url += `&version=${encodeURIComponent(version)}`;
-    const res = await fetch<{
-      data: SilencingSeq[];
-      requestId: string;
-    }>("genomicsservice", url);
-    return res.data || [];
-  };
-
-  const fetchOrthology = async (gene: string) => {
-    const version = await resolveVersion();
-    let url = `/orthology/Tcas?genes=${gene}`;
-    if (version) url += `&version=${encodeURIComponent(version)}`;
-    const res = await fetch<{
-      data: GeneOrthology[];
-      requestId: string;
-    }>("genomicsservice", url);
-    return res.data[0] || { gene, orthologs: [] };
-  };
-
   return {
     fetchPublicVersions,
     fetchVersions,
@@ -496,7 +395,6 @@ const genomicsService = (fetch: typeof apiFetch = apiFetch) => {
     updateAssemblyVersion,
     setAssemblyVersionImage,
     deleteAssemblyVersionImage,
-    fetchJobs,
     fetchManifestTemplate,
     fetchVersionDetail,
     deleteUploadFile,
@@ -504,9 +402,6 @@ const genomicsService = (fetch: typeof apiFetch = apiFetch) => {
     deleteAssemblyVersion,
     fetchAssemblyVersionDetail,
     releaseVersion,
-    fetchGenes,
-    fetchIBs,
-    fetchOrthology,
     search,
     fetchGeneHitsBySpecies,
     suggest,

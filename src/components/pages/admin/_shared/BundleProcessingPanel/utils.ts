@@ -1,9 +1,9 @@
-import type { JobItem } from "@/utils/services/genomics";
+import type { BundleJob } from "./types";
 
 /**
  * The archive a job works on, e.g. "dmel_orthologs.zip".
  */
-export function bundleName(job: JobItem) {
+export function bundleName(job: BundleJob) {
   return (
     (job.payload?.file_path as string | undefined)?.split("/").pop() ||
     "orthology bundle"
