@@ -1,21 +1,14 @@
 import React from "react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { type GeneSearchResult } from "@/utils/services/genomics";
-import type { AssemblyVersionDetail } from "@/utils/services/genomics";
+import type {
+  AssemblyVersionDetail,
+  GeneSearchResult,
+} from "@/utils/services/genomics";
 
 import NothingFound from "./NothingFound";
-import SearchResultByOrthology from "./SearchResultByOrthology";
 import SearchResultByGene from "./SearchResultByGene";
-
-import ExternalGeneLink from "@/components/common/ExternalGeneLink";
-const EmptyContent = ({ children }: { children: React.ReactNode }) => {
-  return (
-    <div className="w-full bg-white rounded-xl border border-slate-200 shadow-sm min-h-[400px] flex items-center justify-center">
-      <p className="text-slate-400 font-medium">{children}</p>
-    </div>
-  );
-};
+import SearchResultByOrthology from "./SearchResultByOrthology";
 
 type SearchResultProps = {
   term: string;
@@ -30,76 +23,55 @@ const SearchResult: React.FC<SearchResultProps> = ({
   assemblies = [],
   version,
 }) => {
-  const orthologies = searchData.orthologies;
-  const otherGenes = searchData.otherGenes;
-  const genes = searchData.genes;
+  // /search is cross-species now: `genes` only comes back when a `species`
+  // filter is sent, so the direct gene hits of an all-species search arrive in
+  // `otherGenes`, each with its species code. `orthologies` and `otherGenes`
+  // are mutually exclusive.
+  const geneHits = searchData.otherGenes ?? [];
+  const orthologies = searchData.orthologies ?? [];
 
-  const orthologyBadge = (orthologies?.length || 0) + (otherGenes?.length || 0);
-  const geneBadge = genes?.length || 0;
+  const geneBadge = geneHits.length;
+  const orthologyBadge = orthologies.length;
 
   if (geneBadge === 0 && orthologyBadge === 0) {
     return <NothingFound term={term} />;
   }
 
-  // Default to gene tab if genes found, else orthology
   const defaultTab = geneBadge > 0 ? "gene" : "orthology";
 
   return (
     <Tabs defaultValue={defaultTab}>
       <TabsList>
-        <TabsTrigger value="gene" badge={geneBadge}>
-          Search by Gene
-        </TabsTrigger>
-        <TabsTrigger value="orthology" badge={orthologyBadge}>
-          Search by Orthology
-        </TabsTrigger>
+        {geneBadge > 0 ? (
+          <TabsTrigger value="gene" badge={geneBadge}>
+            Search by Gene
+          </TabsTrigger>
+        ) : null}
+        {orthologyBadge > 0 ? (
+          <TabsTrigger value="orthology" badge={orthologyBadge}>
+            Search by Orthology
+          </TabsTrigger>
+        ) : null}
       </TabsList>
 
-      <TabsContent value="gene">
-        {genes && genes.length > 0 ? (
+      {geneBadge > 0 ? (
+        <TabsContent value="gene">
           <SearchResultByGene
-            genes={genes}
+            genes={geneHits}
             assemblies={assemblies}
             version={version}
           />
-        ) : (
-          <EmptyContent>No results found searching by gene</EmptyContent>
-        )}
-      </TabsContent>
-      <TabsContent value="orthology">
-        {orthologies && orthologies.length ? (
+        </TabsContent>
+      ) : null}
+      {orthologyBadge > 0 ? (
+        <TabsContent value="orthology">
           <SearchResultByOrthology
             orthologies={orthologies}
             assemblies={assemblies}
             version={version}
           />
-        ) : otherGenes && otherGenes.length ? (
-          <div className="flex flex-col gap-3 text-slate-700 bg-white rounded-xl p-6 border border-slate-200">
-            <p>Found genes:</p>
-            <div className="flex flex-wrap items-center gap-3">
-              {otherGenes.map(({ gene, species }) => {
-                const assembly = assemblies.find(
-                  (a) =>
-                    (a.speciesCode || a.speciesName) === species ||
-                    a.name === species,
-                );
-                return (
-                  <ExternalGeneLink
-                    key={`${species}:${gene}`}
-                    gene={gene}
-                    species={species}
-                    assemblyInfoUrl={assembly?.infoUrl || undefined}
-                    version={version}
-                  />
-                );
-              })}
-            </div>
-            <p>which may have orthologous relationships.</p>
-          </div>
-        ) : (
-          <EmptyContent>No results found searching by orthology</EmptyContent>
-        )}
-      </TabsContent>
+        </TabsContent>
+      ) : null}
     </Tabs>
   );
 };

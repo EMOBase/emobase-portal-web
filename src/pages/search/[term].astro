@@ -1,33 +1,63 @@
 ---
 import Layout from "@/layouts/default.astro";
 import SearchResult from "@/components/pages/search/SearchResult";
-import genomicsService from "@/utils/services/genomics";
+import genomicsService, {
+  type AssemblyVersionDetail,
+  type GeneHit,
+  type GeneSearchResult,
+} from "@/utils/services/genomics";
 import { getCurrentVersionName } from "@/utils/currentVersion";
 
 const { term = "" } = Astro.params;
 
-const { search, fetchVersionDetail } = genomicsService();
+const { search, fetchVersionDetail, fetchGeneHitsBySpecies } =
+  genomicsService();
 
 const currentVersionName = await getCurrentVersionName();
 
-let searchData: any = {};
-let assemblies: any[] = [];
+const [searchResult, assemblyList] = await Promise.all([
+  search(term, { version: currentVersionName }).catch((e) => {
+    console.error("Search failed:", e);
+    return {} as GeneSearchResult;
+  }),
+  currentVersionName
+    ? fetchVersionDetail(currentVersionName)
+        .then((detail) => detail.data.assemblies ?? [])
+        .catch((e) => {
+          console.error("Failed to fetch assemblies:", e);
+          return [] as AssemblyVersionDetail[];
+        })
+    : Promise.resolve([] as AssemblyVersionDetail[]),
+]);
 
-try {
-  searchData = await search(term);
-} catch (e) {
-  console.error("Search failed:", e);
-  searchData = {};
-}
+let searchData = searchResult;
+const assemblies = assemblyList;
 
-try {
-  if (currentVersionName) {
-    const detail = await fetchVersionDetail(currentVersionName);
-    assemblies = detail.data.assemblies || [];
+// A cross-species search puts the matched genes inside their orthology groups
+// instead of returning them as direct hits. Query each assembly's species so
+// the gene tab and the orthology tab can both show the result.
+if (
+  (searchData.orthologies?.length ?? 0) > 0 &&
+  (searchData.otherGenes?.length ?? 0) === 0 &&
+  assemblies.length > 0
+) {
+  const geneHits = await fetchGeneHitsBySpecies(
+    term,
+    assemblies.map((assembly) => assembly.speciesCode),
+    currentVersionName,
+  );
+
+  if (geneHits.length > 0) {
+    const seen = new Set<string>();
+    const merged: GeneHit[] = [];
+    for (const hit of [...(searchData.otherGenes ?? []), ...geneHits]) {
+      const key = `${hit.species}:${hit.gene}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      merged.push(hit);
+    }
+    searchData = { ...searchData, otherGenes: merged };
   }
-} catch (e) {
-  console.error("Failed to fetch assemblies:", e);
-  assemblies = [];
 }
 ---
 

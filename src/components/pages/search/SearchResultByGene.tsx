@@ -1,8 +1,8 @@
-import type { AssemblyVersionDetail } from "@/utils/services/genomics";
+import type { AssemblyVersionDetail, GeneHit } from "@/utils/services/genomics";
 import ExternalGeneLink from "@/components/common/ExternalGeneLink";
 
 type SearchResultByGeneProps = {
-  genes: string[];
+  genes: GeneHit[];
   assemblies?: AssemblyVersionDetail[];
   version?: string;
 };
@@ -12,44 +12,9 @@ const SearchResultByGene: React.FC<SearchResultByGeneProps> = ({
   assemblies = [],
   version,
 }) => {
-  const getAssemblyForGene = (gene: string) => {
-    if (gene.startsWith("TC") || gene.toLowerCase().includes("tcas")) {
-      return (
-        assemblies.find((a) =>
-          (a.speciesCode || a.speciesName)?.toLowerCase().includes("tribolium"),
-        ) || assemblies[0]
-      );
-    }
-    if (
-      gene.startsWith("Ptep") ||
-      gene.toLowerCase().includes("parasteatoda")
-    ) {
-      return (
-        assemblies.find((a) =>
-          (a.speciesCode || a.speciesName)
-            ?.toLowerCase()
-            .includes("parasteatoda"),
-        ) || assemblies.find((a) => a.name?.includes("Ptep"))
-      );
-    }
-    if (gene.startsWith("Lyst") || gene.toLowerCase().includes("lymnaea")) {
-      return (
-        assemblies.find((a) =>
-          (a.speciesCode || a.speciesName)?.toLowerCase().includes("lymnaea"),
-        ) || assemblies.find((a) => a.name?.includes("Lyst"))
-      );
-    }
-    if (gene.startsWith("FBgn") || gene.toLowerCase().includes("dmel")) {
-      return (
-        assemblies.find((a) =>
-          (a.speciesCode || a.speciesName)
-            ?.toLowerCase()
-            .includes("drosophila"),
-        ) || assemblies.find((a) => a.name?.includes("Dmel"))
-      );
-    }
-    return assemblies[0];
-  };
+  const getAssemblyForSpecies = (species: string) =>
+    assemblies.find((a) => a.speciesCode === species) ??
+    assemblies.find((a) => a.speciesName === species || a.name === species);
 
   if (genes.length === 0) {
     return (
@@ -77,23 +42,24 @@ const SearchResultByGene: React.FC<SearchResultByGeneProps> = ({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-slate-100">
-            {genes.map((gene) => {
-              const assembly = getAssemblyForGene(gene);
+            {genes.map(({ species, gene }) => {
+              const assembly = getAssemblyForSpecies(species);
               const infoUrl = assembly?.infoUrl || undefined;
               return (
                 <tr
-                  key={gene}
+                  key={`${species}:${gene}`}
                   className="hover:bg-slate-50/50 transition-colors"
                 >
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <ExternalGeneLink
                       gene={gene}
+                      species={species}
                       assemblyInfoUrl={infoUrl}
                       version={version}
                     />
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
-                    {assembly?.speciesName || assembly?.speciesCode || "-"}
+                    {assembly?.speciesName || species || "-"}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-700">
                     {assembly?.name || "-"}
