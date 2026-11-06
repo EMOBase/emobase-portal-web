@@ -1,9 +1,10 @@
 import qs from "qs";
 
-import { API_SERVICE_ENVS, type ApiService } from "./constants/api";
+import { type ApiService } from "./constants/api";
 
-import { apiBaseUrl, resolveBaseUrl } from "./url";
-import { getEnv } from "./env";
+import { getApiBaseUrl } from "./url";
+
+export { getApiBaseUrl, getPublicApiBaseUrl } from "./url";
 
 export const apiFetch = async <T>(
   service: ApiService,
@@ -87,12 +88,3 @@ export const apiFetch = async <T>(
     throw err;
   }
 };
-
-const getServiceEnvOverride = (service: ApiService) =>
-  getEnv(API_SERVICE_ENVS[service]);
-
-export const getApiBaseUrl = (service: ApiService) =>
-  getServiceEnvOverride(service) || resolveBaseUrl("api", service);
-
-export const getPublicApiBaseUrl = (service: ApiService) =>
-  getServiceEnvOverride(service) || `${apiBaseUrl}/${service}/v1`;

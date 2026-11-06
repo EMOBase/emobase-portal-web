@@ -2,23 +2,20 @@ import Keycloak from "@auth/core/providers/keycloak";
 import { defineConfig } from "@zitadel/astro-auth";
 import { getEnv, getUrlEnv } from "./src/utils/env";
 
-import { resolveBaseUrl } from "./src/utils/url";
-
-const getKeyCloakPath = (issuerUrl) => {
-  const ibbIndex = issuerUrl.indexOf("/ibb/keycloak/");
-  return ibbIndex !== -1 ? issuerUrl.substring(ibbIndex) : "";
-};
+import { getKeycloakServerIssuer } from "./src/utils/url";
 
 /**
- * Resolves Keycloak URLs based on the environment.
- * In production, it uses internal container names
- * to ensure faster and more reliable server-to-server communication.
+ * Resolves Keycloak URLs for browser and server-side use.
+ *
+ * The public issuer is used for the browser authorization redirect and the
+ * token issuer claim. INTERNAL_KEYCLOAK_ISSUER is used for token, userinfo and
+ * JWKS requests made from the server, and falls back to the public issuer.
  */
 const resolveKeycloakUrls = () => {
   const issuerUrl = getUrlEnv("KEYCLOAK_ISSUER");
 
   return {
-    server: resolveBaseUrl("keycloak") + getKeyCloakPath(issuerUrl),
+    server: getKeycloakServerIssuer(),
     client: issuerUrl,
   };
 };

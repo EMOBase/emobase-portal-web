@@ -1,5 +1,5 @@
 import { getEnv, getUrlEnv } from "./env";
-import { type ApiService } from "./constants/api";
+import { API_SERVICE_ENVS, type ApiService } from "./constants/api";
 
 export const directusUrl = getUrlEnv("PUBLIC_DIRECTUS_URL");
 export const keycloakIssuerUrl = getUrlEnv("KEYCLOAK_ISSUER");
@@ -8,6 +8,55 @@ export const jbrowseBaseUrl = getUrlEnv("PUBLIC_UI_PAGE_GENOMEBROWSER");
 export const downloadBaseUrl = getUrlEnv("PUBLIC_DOWNLOAD_URL");
 
 const ASSEMBLY_IMAGE_PATH_PREFIX = "public/uploads/";
+
+const isServer = () => typeof window === "undefined";
+const trimTrailingSlash = (url: string) => url.replace(/\/+$/, "");
+const warned = new Set<string>();
+const isAbsoluteUrl = (url: string) => /^https?:\/\//i.test(url);
+
+const isLoopbackUrl = (url: string): boolean => {
+  try {
+    const hostname = new URL(url).hostname;
+    return ["localhost", "127.0.0.1", "::1"].includes(hostname);
+  } catch {
+    return false;
+  }
+};
+
+const warnOnce = (key: string, message: string) => {
+  if (warned.has(key)) return;
+  warned.add(key);
+  console.warn(message);
+};
+
+const getInternalUrl = (key: string): string => {
+  const value = getEnv(key).trim();
+  if (!value) return "";
+
+  if (!isAbsoluteUrl(value)) {
+    warnOnce(
+      key,
+      `[urls] ${key} must be an absolute URL; ignoring relative value "${value}".`,
+    );
+    return "";
+  }
+
+  return trimTrailingSlash(value);
+};
+
+const warnIfLoopbackFallback = (
+  publicKey: string,
+  internalKey: string,
+  publicUrl: string,
+) => {
+  if (!isLoopbackUrl(publicUrl)) return;
+
+  warnOnce(
+    internalKey,
+    `[urls] ${internalKey} is not set and ${publicKey} points at loopback ` +
+      `(${publicUrl}). Server-side calls will target the current container.`,
+  );
+};
 
 export const downloadUrl = (path: string): string => {
   const base = downloadBaseUrl.endsWith("/")
@@ -27,44 +76,51 @@ export const assemblyImageUrl = (
   return downloadUrl(`emobase-genomics/${rel}`);
 };
 
-export const getKeyCloakBaseUrl = (issuerUrl: string) => {
-  const ibbIndex = issuerUrl.indexOf("/ibb/keycloak/");
-  return ibbIndex !== -1 ? issuerUrl.substring(0, ibbIndex) : "";
+export const getPublicApiBaseUrl = (service: ApiService): string => {
+  const publicUrl =
+    getUrlEnv(API_SERVICE_ENVS[service].public) ||
+    `${apiBaseUrl}/${service}/v1`;
+  return trimTrailingSlash(publicUrl);
 };
 
-export const keycloakBaseUrl = getKeyCloakBaseUrl(keycloakIssuerUrl);
+export const getApiBaseUrl = (service: ApiService): string => {
+  const publicUrl = getPublicApiBaseUrl(service);
+  if (!isServer()) return publicUrl;
 
-/**
- * Resolves base URLs for server-to-server communication within Docker.
- */
-export const resolveBaseUrl = (
-  type: "directus" | "keycloak" | "api" | "jbrowse",
-  service?: ApiService,
-): string => {
-  const isServer = typeof window === "undefined";
-  const isProd = import.meta.env.PROD || process.env.NODE_ENV === "production";
-  const isDocker = isProd && getEnv("INTERNAL_API_NETWORKING") === "true";
+  const { public: publicKey, internal: internalKey } = API_SERVICE_ENVS[service];
+  const internalUrl = getInternalUrl(internalKey);
+  if (internalUrl) return internalUrl;
 
-  if (!isServer || !isDocker)
-    return {
-      directus: directusUrl,
-      keycloak: keycloakBaseUrl,
-      api: `${apiBaseUrl}/${service}/v1`,
-      jbrowse: jbrowseBaseUrl,
-    }[type];
+  warnIfLoopbackFallback(publicKey, internalKey, publicUrl);
+  return publicUrl;
+};
 
-  if (type === "directus") {
-    return "http://directus:8055";
-  }
+export const getDirectusUrl = (): string => {
+  const publicUrl = trimTrailingSlash(getUrlEnv("PUBLIC_DIRECTUS_URL"));
+  if (!isServer()) return publicUrl;
 
-  if (type === "keycloak") {
-    return `http://keycloak:8080`;
-  }
+  const internalUrl = getInternalUrl("INTERNAL_DIRECTUS_URL");
+  if (internalUrl) return internalUrl;
 
-  if (type === "jbrowse") {
-    return jbrowseBaseUrl.replace(/^https?:\/\/[^/]+/, "http://nginx:80");
-  }
+  warnIfLoopbackFallback(
+    "PUBLIC_DIRECTUS_URL",
+    "INTERNAL_DIRECTUS_URL",
+    publicUrl,
+  );
+  return publicUrl;
+};
 
-  // Case type == 'api'
-  return `http://${service}:8080`;
+export const getKeycloakServerIssuer = (): string => {
+  const publicUrl = trimTrailingSlash(getUrlEnv("KEYCLOAK_ISSUER"));
+  if (!isServer()) return publicUrl;
+
+  const internalUrl = getInternalUrl("INTERNAL_KEYCLOAK_ISSUER");
+  if (internalUrl) return internalUrl;
+
+  warnIfLoopbackFallback(
+    "KEYCLOAK_ISSUER",
+    "INTERNAL_KEYCLOAK_ISSUER",
+    publicUrl,
+  );
+  return publicUrl;
 };
