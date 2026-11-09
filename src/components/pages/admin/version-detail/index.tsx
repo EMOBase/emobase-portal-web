@@ -221,6 +221,7 @@ export default function VersionDetail({ versionName }: VersionDetailProps) {
                 size: formatBytes(assemblySize(assembly.files)),
                 infoUrl: assembly.infoUrl,
                 image: assemblyImageUrl(assembly.imagePath),
+                status: assembly.status,
               }}
               href={`/admin/versions/${encodeURIComponent(versionName)}/assemblies/${encodeURIComponent(assembly.id)}`}
               onSubmit={(values) => handleUpdateAssembly(assembly, values)}

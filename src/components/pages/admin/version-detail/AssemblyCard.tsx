@@ -7,7 +7,16 @@ import AssemblyFormModal, {
 import AssemblyImageModal from "./AssemblyImageModal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { cn } from "@/utils/classname";
+import type { AssemblyVersionDetail } from "@/utils/services/genomics";
 import placeholderImage from "@/assets/placeholder.svg?url";
+
+const statusStyles: Record<AssemblyVersionDetail["status"], string> = {
+  PROCESSING: "bg-amber-50 text-amber-600 border-amber-200/50",
+  READY: "bg-emerald-50 text-emerald-600 border-emerald-200/50",
+  DRAFT: "bg-slate-100 text-slate-500 border-slate-200/50",
+  ERROR: "bg-red-50 text-red-600 border-red-200/50",
+  MISSING_REQUIRED_FILE: "bg-slate-100 text-slate-500 border-slate-200/50",
+};
 
 export type AssemblyCardItem = {
   id: string | number;
@@ -17,6 +26,7 @@ export type AssemblyCardItem = {
   image?: string;
   size?: string;
   infoUrl?: string | null;
+  status?: AssemblyVersionDetail["status"];
 };
 
 export default function AssemblyCard({
@@ -90,7 +100,21 @@ export default function AssemblyCard({
       <div className="flex flex-grow flex-col p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="text-xl font-bold text-gray-900">{assembly.name}</h3>
+            <div className="flex min-w-0 flex-wrap items-center gap-2">
+              <h3 className="text-xl font-bold text-gray-900">
+                {assembly.name}
+              </h3>
+              {assembly.status && assembly.status !== "READY" ? (
+                <span
+                  className={cn(
+                    "rounded-sm border px-2 py-0.5 text-xs font-bold uppercase tracking-wider",
+                    statusStyles[assembly.status],
+                  )}
+                >
+                  {assembly.status.replaceAll("_", " ")}
+                </span>
+              ) : null}
+            </div>
             <p className="italic text-slate-500">{assembly.speciesName}</p>
           </div>
 
