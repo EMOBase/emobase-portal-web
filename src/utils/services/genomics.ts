@@ -142,6 +142,10 @@ type FetchAssemblyVersionDetailResponse = {
 
 export type GeneSearchResult = {
   genes?: string[];
+  matchedGenes?: {
+    species: string;
+    gene: string;
+  }[];
   orthologies?: {
     source: string;
     group: string;
@@ -159,7 +163,7 @@ export type GeneSearchResult = {
   }[];
 };
 
-export type GeneHit = NonNullable<GeneSearchResult["otherGenes"]>[number];
+export type GeneHit = NonNullable<GeneSearchResult["matchedGenes"]>[number];
 
 export type SearchOptions = {
   version?: string;
@@ -345,37 +349,6 @@ const genomicsService = (fetch: typeof apiFetch = apiFetch) => {
     return res.data;
   };
 
-  // A cross-species /search returns the orthology groups of the matched genes,
-  // but not the matched genes themselves: `genes` is only returned for a named
-  // species, and `otherGenes` only when no matched gene is in an orthology
-  // group. Ask every species separately so the gene tab can list the hits that
-  // the orthology tab already shows inside their groups.
-  const fetchGeneHitsBySpecies = async (
-    query: string,
-    speciesCodes: string[],
-    version?: string,
-  ): Promise<GeneHit[]> => {
-    const species = [...new Set(speciesCodes.filter(Boolean))];
-    const results = await Promise.all(
-      species.map(async (code) => {
-        try {
-          const data = await search(query, { version, species: code });
-          return (data.genes ?? []).map((gene) => ({ species: code, gene }));
-        } catch {
-          return [];
-        }
-      }),
-    );
-
-    const seen = new Set<string>();
-    return results.flat().filter((hit) => {
-      const key = `${hit.species}:${hit.gene}`;
-      if (seen.has(key)) return false;
-      seen.add(key);
-      return true;
-    });
-  };
-
   const suggest = async (query: string, signal?: AbortSignal) => {
     const version = await resolveVersion();
     let url = `/search/_suggest?query=${encodeURIComponent(query)}`;
@@ -403,7 +376,6 @@ const genomicsService = (fetch: typeof apiFetch = apiFetch) => {
     fetchAssemblyVersionDetail,
     releaseVersion,
     search,
-    fetchGeneHitsBySpecies,
     suggest,
   };
 };

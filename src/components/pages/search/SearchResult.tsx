@@ -25,9 +25,9 @@ const SearchResult: React.FC<SearchResultProps> = ({
 }) => {
   // /search is cross-species now: `genes` only comes back when a `species`
   // filter is sent, so the direct gene hits of an all-species search arrive in
-  // `otherGenes`, each with its species code. `orthologies` and `otherGenes`
-  // are mutually exclusive.
-  const geneHits = searchData.otherGenes ?? [];
+  // `matchedGenes`, each with its species code. `otherGenes` is the narrower
+  // list of matches that no orthology group contains and is not used here.
+  const geneHits = searchData.matchedGenes ?? [];
   const orthologies = searchData.orthologies ?? [];
 
   const geneBadge = geneHits.length;

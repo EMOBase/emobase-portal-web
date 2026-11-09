@@ -81,8 +81,13 @@ export const OnlyGenes: Story = {
     term: "TC006123",
     assemblies,
     searchData: {
-      // An all-species search returns direct gene hits as `otherGenes`; the
+      // An all-species search returns direct gene hits as `matchedGenes`; the
       // flat `genes` list is only returned when a `species` filter is sent.
+      matchedGenes: [
+        { species: "Tcas", gene: "TC006123" },
+        { species: "Tcas", gene: "TC006456" },
+        { species: "Dmel", gene: "FBgn0001234" },
+      ],
       otherGenes: [
         { species: "Tcas", gene: "TC006123" },
         { species: "Tcas", gene: "TC006456" },
@@ -161,9 +166,14 @@ export const BothResults: Story = {
     term: "TC000001",
     assemblies,
     searchData: {
-      // The search page merges the per-species direct hits into `otherGenes`
-      // while keeping the cross-species `orthologies` from the first call.
-      otherGenes: [{ species: "Tcas", gene: "TC000001" }],
+      // `matchedGenes` lists every direct match, including TC000001, which an
+      // orthology group also contains. `otherGenes` is only the matches no
+      // group contains, so the Ptep hit appears here but TC000001 does not.
+      matchedGenes: [
+        { species: "Ptep", gene: "Ptep_004242" },
+        { species: "Tcas", gene: "TC000001" },
+      ],
+      otherGenes: [{ species: "Ptep", gene: "Ptep_004242" }],
       orthologies: [
         {
           group: "OG0007944",
