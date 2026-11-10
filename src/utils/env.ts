@@ -1,18 +1,15 @@
 const defaultValues: Record<string, string> = {
-  PUBLIC_APIS_BASE_URL: "/ibb/api",
+  PUBLIC_APIS_BASE_URL: "/api",
   PUBLIC_DOWNLOAD_URL: "/download/",
 
-  PUBLIC_UI_PAGE_GENOMEBROWSER: "/ibb/jbrowse2/",
-  PUBLIC_UI_PAGE_ONTOSCOPE: "/ibb/ontoscope",
-  PUBLIC_UI_PAGE_BLAST: "/ibb/blast/",
-  PUBLIC_UI_PAGE_API_DOC: "/ibb/swagger-ui/",
+  PUBLIC_UI_PAGE_GENOMEBROWSER: "/jbrowse/",
+  PUBLIC_UI_PAGE_BLAST: "/blast/",
+  PUBLIC_UI_PAGE_API_DOC: "/api/genomicsservice/v1/docs",
 
   AUTH_TRUST_HOST: "true",
 
-  KEYCLOAK_ISSUER: "/ibb/keycloak/realms/ibb",
+  KEYCLOAK_ISSUER: "http://localhost:8081/keycloak/realms/ibb",
   KEYCLOAK_CLIENT_ID: "ibb-client",
-
-  PUBLIC_DIRECTUS_URL: "/ibb/directus",
 };
 
 /**
