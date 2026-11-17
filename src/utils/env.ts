@@ -7,9 +7,6 @@ const defaultValues: Record<string, string> = {
   PUBLIC_UI_PAGE_API_DOC: "/api/genomicsservice/v1/docs",
 
   AUTH_TRUST_HOST: "true",
-
-  KEYCLOAK_ISSUER: "http://localhost:8081/keycloak/realms/ibb",
-  KEYCLOAK_CLIENT_ID: "ibb-client",
 };
 
 /**
