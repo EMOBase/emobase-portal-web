@@ -33,7 +33,11 @@ export function SingleJBrowseTrackDialog({
       selectInDefaultSession: false,
     },
     validate: (values) => ({
-      file: values.file ? undefined : "Please choose a track file",
+      file: !values.file
+        ? "Please choose a track file"
+        : !/\.(bgz|gz|gzip)$/i.test(values.file.name)
+          ? "Track files must be gzipped (.gz or .bgz)"
+          : undefined,
       trackName: values.trackName.trim() ? undefined : "Track name is required",
     }),
     onSubmit: (values) =>
@@ -79,7 +83,7 @@ export function SingleJBrowseTrackDialog({
           >
             <FileInput
               id="jbrowse-track-file"
-              accept=".bw,.bgz,.gz"
+              accept=".bgz,.gz"
               value={form.values.file}
               onFiles={(files) => form.setField("file", files[0] ?? null)}
               disabled={form.submitting}
