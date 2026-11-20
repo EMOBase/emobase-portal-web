@@ -358,7 +358,7 @@ export default function VersionAssemblyUpload({
             Add Synonym File
             <input
               type="file"
-              accept=".gz,.bgz"
+              accept=".gz,.gzip"
               className="absolute inset-0 cursor-pointer opacity-0"
               onChange={(e) => {
                 const selected = e.target.files?.[0];

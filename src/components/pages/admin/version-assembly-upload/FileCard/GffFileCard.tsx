@@ -51,13 +51,10 @@ export const GffFileCard = ({
       return;
     }
 
-    if (
-      !selectedFile.name.endsWith(".gz") &&
-      !selectedFile.name.endsWith(".bgz")
-    ) {
+    if (!/\.(gz|gzip)$/i.test(selectedFile.name)) {
       toastManager.add({
         type: "error",
-        title: "Only .gz or .bgz files are accepted",
+        title: "Only .gz or .gzip files are accepted",
       });
       event.target.value = "";
       return;
@@ -137,7 +134,7 @@ export const GffFileCard = ({
         ref={fileInputRef}
         type="file"
         className="hidden"
-        accept=".gz,.bgz"
+        accept=".gz,.gzip"
         onChange={handleFileChange}
       />
       <GffUpload

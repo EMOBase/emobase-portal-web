@@ -119,7 +119,7 @@ export function BatchJBrowseTrackDialog({
             downloadingTemplate={downloadingTemplate}
             folderName="tracks"
             itemLabel="track file"
-            fileTypesHint="Track files may be plain (.bw) or already compressed (.bgz, .gz)."
+            fileTypesHint="Track files may be plain (.bw) or gzipped (.gz)."
             columns={TRACK_MANIFEST_COLUMNS}
           />
 
