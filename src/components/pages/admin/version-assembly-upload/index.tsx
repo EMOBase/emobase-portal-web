@@ -226,14 +226,14 @@ export default function VersionAssemblyUpload({
   ) {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
     setJBrowseTrackUploads((prev) => [
-      ...prev,
       { id, file, trackName, category, selectInDefaultSession },
+      ...prev,
     ]);
   }
 
   function handleAddSynonym(file: File) {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setSynonymUploads((prev) => [...prev, { id, file }]);
+    setSynonymUploads((prev) => [{ id, file }, ...prev]);
   }
 
   return (
@@ -302,16 +302,8 @@ export default function VersionAssemblyUpload({
         </div>
 
         <div className="grid gap-4">
-          {jbrowseTrackFiles.map((track) => (
-            <FileCard
-              key={track.id}
-              file={track}
-              canDelete
-              onRefresh={refresh}
-              size="sm"
-            />
-          ))}
-
+          {/* In-progress uploads render first: the API lists files
+              newest-first, so a card keeps its position once it completes. */}
           {jbrowseTrackUploads.map((item) => (
             <JBrowseTrackFileCard
               key={item.id}
@@ -327,6 +319,16 @@ export default function VersionAssemblyUpload({
                 );
                 refresh();
               }}
+            />
+          ))}
+
+          {jbrowseTrackFiles.map((track) => (
+            <FileCard
+              key={track.id}
+              file={track}
+              canDelete
+              onRefresh={refresh}
+              size="sm"
             />
           ))}
 
@@ -370,16 +372,8 @@ export default function VersionAssemblyUpload({
         </div>
 
         <div className="grid gap-4">
-          {synonymFiles.map((file) => (
-            <FileCard
-              key={file.id}
-              file={file}
-              canDelete
-              onRefresh={refresh}
-              size="sm"
-            />
-          ))}
-
+          {/* In-progress uploads render first, matching the newest-first order
+              the API returns once they complete. */}
           {synonymUploads.map((item) => (
             <SynonymFileCard
               key={item.id}
@@ -393,6 +387,16 @@ export default function VersionAssemblyUpload({
                 );
                 refresh();
               }}
+            />
+          ))}
+
+          {synonymFiles.map((file) => (
+            <FileCard
+              key={file.id}
+              file={file}
+              canDelete
+              onRefresh={refresh}
+              size="sm"
             />
           ))}
 

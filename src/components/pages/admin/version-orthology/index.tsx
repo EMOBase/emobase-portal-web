@@ -141,7 +141,7 @@ export default function VersionOrthology({
 
   function handleAdd(file: File, order: number, algorithm: string) {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setSingleUploads((prev) => [...prev, { id, file, order, algorithm }]);
+    setSingleUploads((prev) => [{ id, file, order, algorithm }, ...prev]);
   }
 
   const needsPolling =
@@ -194,16 +194,8 @@ export default function VersionOrthology({
 
       {/* Files */}
       <div className="grid gap-4">
-        {orthologyFiles.map((file) => (
-          <FileCard
-            key={file.id}
-            file={file}
-            canDelete
-            onRefresh={refresh}
-            size="sm"
-          />
-        ))}
-
+        {/* In-progress uploads render first, matching the newest-first order
+            the API returns once they complete. */}
         {singleUploads.map((item) => (
           <OrthologyFileCard
             key={item.id}
@@ -217,6 +209,16 @@ export default function VersionOrthology({
               );
               refresh();
             }}
+          />
+        ))}
+
+        {orthologyFiles.map((file) => (
+          <FileCard
+            key={file.id}
+            file={file}
+            canDelete
+            onRefresh={refresh}
+            size="sm"
           />
         ))}
 
