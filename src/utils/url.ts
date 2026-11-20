@@ -1,7 +1,6 @@
 import { getEnv, getUrlEnv } from "./env";
 import { API_SERVICE_ENVS, type ApiService } from "./constants/api";
 
-export const directusUrl = getUrlEnv("PUBLIC_DIRECTUS_URL");
 export const keycloakIssuerUrl = getUrlEnv("KEYCLOAK_ISSUER");
 export const apiBaseUrl = getUrlEnv("PUBLIC_APIS_BASE_URL");
 export const jbrowseBaseUrl = getUrlEnv("PUBLIC_UI_PAGE_GENOMEBROWSER");
@@ -92,21 +91,6 @@ export const getApiBaseUrl = (service: ApiService): string => {
   if (internalUrl) return internalUrl;
 
   warnIfLoopbackFallback(publicKey, internalKey, publicUrl);
-  return publicUrl;
-};
-
-export const getDirectusUrl = (): string => {
-  const publicUrl = trimTrailingSlash(getUrlEnv("PUBLIC_DIRECTUS_URL"));
-  if (!isServer()) return publicUrl;
-
-  const internalUrl = getInternalUrl("INTERNAL_DIRECTUS_URL");
-  if (internalUrl) return internalUrl;
-
-  warnIfLoopbackFallback(
-    "PUBLIC_DIRECTUS_URL",
-    "INTERNAL_DIRECTUS_URL",
-    publicUrl,
-  );
   return publicUrl;
 };
 
