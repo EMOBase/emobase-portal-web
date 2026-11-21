@@ -1,22 +1,48 @@
-## Development
+# Repository guidance
 
-When starting the dev server, use background mode:
+## Development server
 
+Start the dev server in background mode:
+
+```sh
+npm run dev -- --background
 ```
-astro dev --background
-```
 
-Manage the background server with `astro dev stop`, `astro dev status`, and `astro dev logs`.
+Manage it with `npx astro dev stop`, `npx astro dev status` and
+`npx astro dev logs`.
 
-## Documentation
+Run `npm run check` before committing. `npm run build` catches SSR-only issues
+that the dev server does not.
 
-Full documentation: https://docs.astro.build
+## Environment
 
-Consult these guides before working on related tasks:
+- Copy `.env.example` to `.env` and fill `PUBLIC_SERVER`, the `KEYCLOAK_*`
+  values and `AUTH_SECRET`.
+- `localhost` is outside `security.allowedDomains`; start locally with
+  `DISABLE_ORIGIN_CHECK=true npm run dev`. The flag is read when
+  `astro.config.mjs` loads.
+- Read URLs through `src/utils/env.ts` (`getEnv`, `getUrlEnv`,
+  `getInternalUrl`) and `src/utils/url.ts`. Do not read `import.meta.env`
+  directly in components.
+- Server-side calls prefer `INTERNAL_*` values and fall back to the public URL.
+  Keep that fallback when adding a service.
 
-- [Adding pages, dynamic routes, or middleware](https://docs.astro.build/en/guides/routing/)
-- [Working with Astro components](https://docs.astro.build/en/basics/astro-components/)
-- [Using React, Vue, Svelte, or other framework components](https://docs.astro.build/en/guides/framework-components/)
-- [Adding or managing content](https://docs.astro.build/en/guides/content-collections/)
-- [Adding styles or using Tailwind](https://docs.astro.build/en/guides/styling/)
-- [Supporting multiple languages](https://docs.astro.build/en/guides/internationalization/)
+## Auth
+
+- Keycloak runs through Auth.js in `auth.config.mjs`; the route is
+  `src/pages/api/auth/[...auth].ts`.
+- Server-side token, userinfo and JWKS requests use `INTERNAL_KEYCLOAK_ISSUER`
+  when it is set.
+- Use `getSession` from `@zitadel/astro-auth/server` as `src/middleware.ts`
+  does; do not add a second auth path.
+
+## Version context
+
+`src/middleware.ts` resolves `?version=` and `VERSION_COOKIE_NAME`. A URL
+parameter applies to that view only; do not write it into the cookie.
+
+## Docs
+
+- [README.md](README.md)
+- [emobase-portal-deploy](https://github.com/EMOBase/emobase-portal-deploy)
+- [Astro documentation](https://docs.astro.build)
